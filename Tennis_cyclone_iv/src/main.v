@@ -3,6 +3,8 @@ module main(
 
  ,input [3:0]KEY
 
+ ,input [2:0]SW
+
  ,input PS2_CLK
  ,input PS2_DAT
 
@@ -13,9 +15,15 @@ module main(
  ,output [7:0]VGA_R // [4:0] VGA_RED
  ,output [7:0]VGA_G // [4:0] VGA_GREEN
  ,output [7:0]VGA_B // [4:0] VGA_BLUE
+
+ ,output VGA_CLK
+ ,output VGA_SYNC_N
+ ,output VGA_BLANK_N
  
  ,output test_point 
 );
+
+//assign VGA_SYNC_N = 1'b0;
 
 wire [2:0]  clk_div; 
 assign test_point = clk_div[2];
@@ -55,9 +63,9 @@ wire video_g;
 wire video_b;
 
 
-assign VGA_R = {8{video_r}};
-assign VGA_G = {8{video_g}};
-assign VGA_B = {8{video_b}};
+//assign VGA_R = {8{video_r}};
+//assign VGA_G = {8{video_g}};
+//assign VGA_B = {8{video_b}};
 
 /*assign VGA_RED = {5{video_r}};
 assign VGA_GREEN = {5{video_g}};
@@ -81,6 +89,31 @@ game game_inst(
     ,.video_b     (video_b)
     ,.goals       (goals)
      );
+
+  localparam MIC_WORD_SIZE = 16;
+  wire sampleRate;
+  wire [9:0] fftSampleNumber;
+  wire [MIC_WORD_SIZE-1:0] fftInDataAbs, fftOutData;    
+
+
+  VGAGenerator vgag0
+  (
+    //.reset(~configReady),
+    .reset(1'b0),    
+    .inClock(CLOCK_50),
+    .pixelClock(VGA_CLK),
+    .rColor(VGA_R),
+    .gColor(VGA_G),
+    .bColor(VGA_B),
+    .hSync(VGA_HS),
+    .vSync(VGA_VS),
+    .blankN(VGA_BLANK_N),
+    .syncN(VGA_SYNC_N),
+    .bgColor(SW[2:0]),
+    .vramWriteClock(sampleRate),
+    .vramWriteAddr(fftSampleNumber),
+    .vramInData(fftOutData)
+  );
 
 endmodule
 
