@@ -92,8 +92,15 @@ game game_inst(
 
   localparam MIC_WORD_SIZE = 16;
   wire sampleRate;
-  wire [9:0] fftSampleNumber;
-  wire [MIC_WORD_SIZE-1:0] fftInDataAbs, fftOutData;    
+  reg [9:0] fftSampleNumber;
+  reg [MIC_WORD_SIZE-1:0] fftInDataAbs, fftOutData;    
+
+always @(posedge CLOCK_50) begin
+  if (fftSampleNumber < 10'b11_1111_1111) begin
+    fftOutData <= fftSampleNumber << 6;
+  end
+end
+
 
 
   VGAGenerator vgag0
