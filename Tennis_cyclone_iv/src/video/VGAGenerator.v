@@ -39,6 +39,22 @@ module VGAGenerator
 
 	localparam Y_OFFSET = 768;
 
+	localparam H_VISIBLE_AREA = 1024;
+	localparam V_VISIBLE_AREA = 768;
+	localparam H_BORDER_SIZE = 16;
+	localparam V_BORDER_SIZE = 16;
+
+	localparam H_MIN_POSITION = H_BORDER_SIZE;
+	localparam H_MAX_POSITION = H_VISIBLE_AREA - V_BORDER_SIZE;	
+	localparam V_MIN_POSITION = V_BORDER_SIZE;
+	localparam V_MAX_POSITION = V_VISIBLE_AREA - V_BORDER_SIZE;	
+
+	localparam V_SIZE_RAKET = 96; 
+	localparam H_SIZE_RAKET = 16; 
+	localparam H_RIGHT_RAKET_OFFSET = 16;
+	localparam LEFT_RAKET_POSITION = H_MAX_POSITION - H_RIGHT_RAKET_OFFSET - H_SIZE_RAKET;
+	localparam RIGHT_RAKET_POSITION = H_MAX_POSITION - H_RIGHT_RAKET_OFFSET;
+
 	wire vgaClock, blank;
 	wire [23:0] bgFullColor;
 	reg [23:0] fullColor;
@@ -79,18 +95,57 @@ module VGAGenerator
 		.q(yActivePixelPos)
 	);
 	
+	reg border;
+	reg raket;
+
+
+
 	always @(posedge pixelClock or posedge reset)
 	begin
 		if (reset)
 		begin
-			fullColor <= 1'b0;
+			//fullColor <= 1'b0;
+
+			border <= 1'b0;
 		end
 	
 		else
 		begin
-			if (Y_OFFSET - yActivePixelPos <= yActivePixel) fullColor <= ~bgFullColor;
-			else fullColor <= bgFullColor;
+		    //fullColor <= {3{xActivePixel[9:2]^yActivePixel[9:2]}};
+
+			//if (Y_OFFSET - yActivePixelPos <= yActivePixel) fullColor <= ~bgFullColor;
+			//else fullColor <= bgFullColor;
+
+			// border	
+			//fullColor <= {23{(xActivePixel < 16) | (xActivePixel > (1024-16)) | (yActivePixel < 16) | (yActivePixel > (768-16))}};
+			
+			// border
+			border <= (xActivePixel < 16) | (xActivePixel > (1024-16)) | (yActivePixel < 16) | (yActivePixel > (768-16));
 		end
+
+	end
+
+
+
+
+	reg raket_x;
+	reg raket_y;
+
+	always @(posedge pixelClock or posedge reset)
+	begin
+			raket_x <= (xActivePixel >= LEFT_RAKET_POSITION) & (xActivePixel <= RIGHT_RAKET_POSITION); 
+			raket_y <= (yActivePixel >= H_MIN_POSITION) & (yActivePixel <= H_MIN_POSITION + V_SIZE_RAKET);	
+			raket <= raket_x & raket_y;		
+	end
+
+	always @* //(posedge pixelClock or posedge reset)
+	begin
+		if (raket) fullColor <= 24'hffffff; //24'b1111_1111_1111_1111; //{16{1'b1}};
+		if (border) fullColor <= 24'h00ffff; //16'b1111_1111_1111_1111; //  {22{1'b1}};
+		if ((!raket) & (!border)) fullColor <= 24'h000000;  //{24{1'b0}};
+			
+		//fullColor <= {22{ raket | border}};
+	
 	end
 
 endmodule

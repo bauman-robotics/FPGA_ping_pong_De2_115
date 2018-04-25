@@ -33,7 +33,8 @@ module VGASyncGenerator
 
 	localparam H_IS_NEGATIVE = 1'b1;
 	localparam H_VISIBLE_AREA = 1024;
-	localparam H_FRONT_PORCH = 24;
+	//localparam H_FRONT_PORCH = 24;
+	localparam H_FRONT_PORCH = 124;
 	localparam H_SYNC_PULSE = 136;
 	localparam H_BACK_PORCH = 144;
 	localparam H_TOTAL_PIX = H_VISIBLE_AREA + H_FRONT_PORCH + H_SYNC_PULSE + H_BACK_PORCH;
