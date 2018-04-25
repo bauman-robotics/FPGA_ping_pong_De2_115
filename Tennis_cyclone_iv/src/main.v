@@ -90,15 +90,20 @@ game game_inst(
     ,.goals       (goals)
      );
 
-  localparam MIC_WORD_SIZE = 16;
+  //localparam MIC_WORD_SIZE = 16;
   wire sampleRate;
   reg [9:0] fftSampleNumber;
-  reg [MIC_WORD_SIZE-1:0] fftInDataAbs, fftOutData;    
+  reg [9:0] fftOutData;
+ //reg [MIC_WORD_SIZE-1:0] fftInDataAbs, fftOutData;    
+
+assign sampleRate = CLOCK_50;
 
 always @(posedge CLOCK_50) begin
   if (fftSampleNumber < 10'b11_1111_1111) begin
-    fftOutData <= fftSampleNumber << 6;
+    fftSampleNumber <= fftSampleNumber + 1;
+    fftOutData <= fftSampleNumber;
   end
+  
 end
 
 
