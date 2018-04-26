@@ -55,6 +55,10 @@ module VGAGenerator
 	localparam LEFT_RAKET_POSITION = H_MAX_POSITION - H_RIGHT_RAKET_OFFSET - H_SIZE_RAKET;
 	localparam RIGHT_RAKET_POSITION = H_MAX_POSITION - H_RIGHT_RAKET_OFFSET;
 
+	localparam V_RAKET_MIN_POS = V_MIN_POSITION;
+	localparam V_RAKET_MAX_POS = V_MAX_POSITION - V_SIZE_RAKET;
+
+
 	wire vgaClock, blank;
 	wire [23:0] bgFullColor;
 	reg [23:0] fullColor;
@@ -130,11 +134,28 @@ module VGAGenerator
 
 	reg raket_x;
 	reg raket_y;
+	reg [9:0]raket_y_var_pos; // 
+	reg [0:16]counter;
 
+	always @(posedge pixelClock) counter <= counter + 1;	
+
+	/*
+	wire clock_div; assign clock_div = counter[0];
+	always @(posedge clock_div) begin
+		if (raket_y_var_pos < (V_RAKET_MAX_POS - V_RAKET_MIN_POS)) 	raket_y_var_pos <= raket_y_var_pos + 1;
+		else raket_y_var_pos <= 0;
+	end
+*/
+	wire clkStb; assign clkStb = &counter;
+	always @(posedge pixelClock) if (clkStb) begin
+		if (raket_y_var_pos < (V_RAKET_MAX_POS - V_RAKET_MIN_POS)) 	raket_y_var_pos <= raket_y_var_pos + 1;
+		else raket_y_var_pos <= 0;
+	end
+	
 	always @(posedge pixelClock or posedge reset)
 	begin
 			raket_x <= (xActivePixel >= LEFT_RAKET_POSITION) & (xActivePixel <= RIGHT_RAKET_POSITION); 
-			raket_y <= (yActivePixel >= H_MIN_POSITION) & (yActivePixel <= H_MIN_POSITION + V_SIZE_RAKET);	
+			raket_y <= (yActivePixel >= V_RAKET_MIN_POS + raket_y_var_pos) & (yActivePixel <= V_RAKET_MIN_POS + raket_y_var_pos + V_SIZE_RAKET);	
 			raket <= raket_x & raket_y;		
 	end
 
