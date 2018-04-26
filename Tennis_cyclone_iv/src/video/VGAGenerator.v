@@ -60,6 +60,7 @@ module VGAGenerator
 	localparam V_RAKET_MIN_POS = V_MIN_POSITION;
 	localparam V_RAKET_MAX_POS = V_MAX_POSITION - V_SIZE_RAKET;
 
+	localparam V_BALL_Y_POS = H_MIN_POSITION + 50; // temp
 
 	wire vgaClock, blank;
 	wire [23:0] bgFullColor;
@@ -168,34 +169,37 @@ module VGAGenerator
 	reg dx; // if (dx==0)  => x <= x + 1; // if (dx==1) => x <= x -1;
 	reg dy;
 
+
+
 // ball moving by X
 	always @(posedge pixelClock) if (clkStb) begin
-		if (dx == 0) begin
-			if (ball_x_pos < H_MAX_POSITION) begin
-				ball_x_pos <= ball_x_pos + 1;
-			end
-			else begin 
-				dx = 1;	
-			end 
+		if (dx == 0) begin // if moving to right 
+			if ((ball_x_pos + BALL_HALF_SIZE == LEFT_RAKET_POSITION) &&   // if ball meet whis raket
+				(V_BALL_Y_POS - BALL_HALF_SIZE > raket_y_var_pos) && 
+				(V_BALL_Y_POS + BALL_HALF_SIZE < raket_y_var_pos + V_SIZE_RAKET))
+			dx = 1;	
+			else if (ball_x_pos + BALL_HALF_SIZE < H_MAX_POSITION) ball_x_pos <= ball_x_pos + 1;
+			else dx = 1;     // if moving to left 
 		end
-		else begin 
-			if (ball_x_pos > 0) begin 
-				ball_x_pos <= ball_x_pos - 1;
-			end
-			else begin
-				dx = 0;	
-			end
+		else begin  // if (dx == 1)
+			if (ball_x_pos + BALL_HALF_SIZE > H_MIN_POSITION ) ball_x_pos <= ball_x_pos - 1;
+			else dx = 0;	
 		end
 	end
 
 	reg ball;
 
+localparam BALL_HALF_SIZE = 8;
+localparam BALL_SIZE = BALL_HALF_SIZE + BALL_HALF_SIZE;
+
 // Ball paint
 	always @(posedge pixelClock or posedge reset)
 	begin
-		//if ((xActivePixel == ball_x_pos) && (yActivePixel == 100))
-		//	ball <= 1;
-		ball <= (xActivePixel == ball_x_pos) & (yActivePixel == 100);
+		//ball <= (xActivePixel == ball_x_pos) & (yActivePixel == V_BALL_Y_POS);
+		ball <= (xActivePixel > ball_x_pos - BALL_HALF_SIZE ) &
+				(xActivePixel < ball_x_pos + BALL_HALF_SIZE ) &
+				(yActivePixel > V_BALL_Y_POS - BALL_HALF_SIZE ) &
+				(yActivePixel < V_BALL_Y_POS + BALL_HALF_SIZE );
 	end
 
 endmodule
