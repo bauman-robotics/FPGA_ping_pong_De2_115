@@ -131,7 +131,9 @@ module VGAGenerator
 	begin
 		if (raket) fullColor <= 24'hffffff; //24'b1111_1111_1111_1111; //{16{1'b1}};
 		if (border) fullColor <= 24'h00ffff; //16'b1111_1111_1111_1111; //  {22{1'b1}};
-		if ((!raket) & (!border)) fullColor <= 24'h000000;  //{24{1'b0}};
+		if (ball) fullColor <= 24'hf0f0f0;
+		if ((!raket) && (!border) && (!ball)) fullColor <= 24'h000000;  //{24{1'b0}};
+
 			
 		//fullColor <= {22{ raket | border}};
 	
@@ -145,7 +147,7 @@ module VGAGenerator
 
 	reg [9:0]raket_y_var_pos;   // [0 - (V_RAKET_MAX_POS - V_RAKET_MIN_POS)]
 	wire clkStb; assign clkStb = &counter; // all in hi level 
-/*	always @(posedge pixelClock) if (clkStb) begin
+	/*	always @(posedge pixelClock) if (clkStb) begin
 		if (raket_y_var_pos < (V_RAKET_MAX_POS - V_RAKET_MIN_POS)) 	raket_y_var_pos <= raket_y_var_pos + 1;
 		else raket_y_var_pos <= 0;
 	end*/
@@ -158,5 +160,42 @@ module VGAGenerator
 	end
 
 	//---------------------------
+
+
+	// ball
+	reg [9:0]ball_x_pos;
+	reg [9:0]ball_y_pos;
+	reg dx; // if (dx==0)  => x <= x + 1; // if (dx==1) => x <= x -1;
+	reg dy;
+
+// ball moving by X
+	always @(posedge pixelClock) if (clkStb) begin
+		if (dx == 0) begin
+			if (ball_x_pos < H_MAX_POSITION) begin
+				ball_x_pos <= ball_x_pos + 1;
+			end
+			else begin 
+				dx = 1;	
+			end 
+		end
+		else begin 
+			if (ball_x_pos > 0) begin 
+				ball_x_pos <= ball_x_pos - 1;
+			end
+			else begin
+				dx = 0;	
+			end
+		end
+	end
+
+	reg ball;
+
+// Ball paint
+	always @(posedge pixelClock or posedge reset)
+	begin
+		//if ((xActivePixel == ball_x_pos) && (yActivePixel == 100))
+		//	ball <= 1;
+		ball <= (xActivePixel == ball_x_pos) & (yActivePixel == 100);
+	end
 
 endmodule
