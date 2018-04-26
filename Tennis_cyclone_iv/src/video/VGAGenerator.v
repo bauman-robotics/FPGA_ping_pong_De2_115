@@ -207,7 +207,7 @@ module VGAGenerator
 localparam BALL_HALF_SIZE = 8;
 localparam BALL_SIZE = BALL_HALF_SIZE + BALL_HALF_SIZE;
 
-// Ball paint // 16x16 square 
+/*// Ball paint // 16x16 square 
 	always @(posedge pixelClock or posedge reset)
 	begin
 		//ball <= (xActivePixel == ball_x_pos) & (yActivePixel == V_BALL_Y_POS);
@@ -215,6 +215,17 @@ localparam BALL_SIZE = BALL_HALF_SIZE + BALL_HALF_SIZE;
 				(xActivePixel < ball_x_pos + BALL_HALF_SIZE ) &
 				(yActivePixel > ball_y_pos - BALL_HALF_SIZE ) &
 				(yActivePixel < ball_y_pos + BALL_HALF_SIZE );
+	end*/
+
+
+// Ball paint  // 25x25 cirle
+localparam BALL_RADIUS = 12;
+localparam BALL_RADIUS_SQR = 144;
+
+	always @(posedge pixelClock or posedge reset)
+	begin
+		ball <= (xActivePixel - ball_x_pos) * (xActivePixel - ball_x_pos)  +
+				(yActivePixel - ball_y_pos) * (yActivePixel - ball_y_pos)  < BALL_RADIUS_SQR;
 	end
 
 endmodule
