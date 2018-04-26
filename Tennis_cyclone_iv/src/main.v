@@ -25,25 +25,27 @@ module main(
 
 //assign VGA_SYNC_N = 1'b0;
 
-wire [2:0]  clk_div; 
+/*wire [2:0]  clk_div; 
 assign test_point = clk_div[2];
 lpm_counter1 lpm_counter1_inst(
      .clock (CLOCK_50)
     ,.q     (clk_div)
-    );
+    );*/
 
-wire [3:0]key;
-assign key[3]     = KEY[0];  // reset
+//wire [3:0]key;
+wire up_dir, down_dir; 
+//assign key[3]     = KEY[0];  // reset
+
 ps2 ps2_inst(
      .PS2_DAT_in (PS2_DAT)
     ,.PS2_CLK_in (PS2_CLK)
     ,.clock      (CLOCK_50)
     ,.led_out    (LEDG[7:0])
-    ,.down       (key[0])
-    ,.up         (key[1])
+    ,.down       (down_dir)
+    ,.up         (up_dir)
     );
 
-wire [7:0]  char_count;
+/*wire [7:0]  char_count;
 wire [11:0] line_count;
 wire pre_visible;
 hvsync hvsync_inst(
@@ -54,14 +56,14 @@ hvsync hvsync_inst(
     ,.hsync       (VGA_HSYNC)
     ,.vsync       (VGA_VSYNC)
     ,.pre_visible (pre_visible)	
-     );
+     );*/
 
 
-wire [7:0]goals;
+/*wire [7:0]goals;
 wire video_r;
 wire video_g;
 wire video_b;
-
+*/
 
 //assign VGA_R = {8{video_r}};
 //assign VGA_G = {8{video_g}};
@@ -76,7 +78,7 @@ assign VGA_RED[2] = video_r;
 assign VGA_RED[3] = video_r;
 assign VGA_RED[4] = video_r;*/
 
-game game_inst(
+/*game game_inst(
      .char_clock  (clk_div[2])
     ,.vsync       (VGA_VSYNC)
     ,.key         (key)
@@ -88,7 +90,7 @@ game game_inst(
     ,.video_g     (video_g)
     ,.video_b     (video_b)
     ,.goals       (goals)
-     );
+     );*/
 
   //localparam MIC_WORD_SIZE = 16;
   wire sampleRate;
@@ -102,11 +104,8 @@ always @(posedge CLOCK_50) begin
   if (fftSampleNumber < 10'b11_1111_1111) begin
     fftSampleNumber <= fftSampleNumber + 1;
     fftOutData <= fftSampleNumber;
-  end
-  
+  end  
 end
-
-
 
   VGAGenerator vgag0
   (
@@ -124,7 +123,9 @@ end
     .bgColor(SW[2:0]),
     .vramWriteClock(sampleRate),
     .vramWriteAddr(fftSampleNumber),
-    .vramInData(fftOutData)
+    .vramInData (fftOutData),
+    .raket_up   (up_dir),
+    .raket_down (down_dir)
   );
 
 endmodule
