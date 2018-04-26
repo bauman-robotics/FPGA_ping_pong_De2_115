@@ -94,7 +94,7 @@ module VGAGenerator
 	end
 	//---------------------------
 
-	//Raket paint
+	// Raket paint
 	reg raket_x;
 	reg raket_y;
 	reg raket;
@@ -132,11 +132,11 @@ module VGAGenerator
 	end
 
 	//---------------------------
-	// ball
+	// Ball
 	//---------------------------
 
 
-    // ball moving by X
+    // Ball moving by X
 	reg dx; // if (dx==0)  => x <= x + 1; // if (dx==1) => x <= x -1;    
 	reg [9:0]ball_x_pos;
 	always @(posedge pixelClock) if (clkStb) begin
@@ -154,7 +154,7 @@ module VGAGenerator
 		end
 	end
 
-    // ball moving by Y
+    // Ball moving by Y
 	reg dy; // if (dy==0)  => y <= y + 1; // if (dy==1) => y <= y -1;
 	reg [9:0]ball_y_pos;
 	always @(posedge pixelClock) if (clkStb) begin
