@@ -60,7 +60,7 @@ module VGAGenerator
 	localparam V_RAKET_MIN_POS = V_MIN_POSITION;
 	localparam V_RAKET_MAX_POS = V_MAX_POSITION - V_SIZE_RAKET;
 
-	localparam V_BALL_Y_POS = H_MIN_POSITION + 50; // temp
+	//localparam V_BALL_Y_POS = H_MIN_POSITION + 50; // temp
 
 	wire vgaClock, blank;
 	wire [23:0] bgFullColor;
@@ -167,7 +167,7 @@ module VGAGenerator
 	reg [9:0]ball_x_pos;
 	reg [9:0]ball_y_pos;
 	reg dx; // if (dx==0)  => x <= x + 1; // if (dx==1) => x <= x -1;
-	reg dy;
+
 
 
 
@@ -175,8 +175,8 @@ module VGAGenerator
 	always @(posedge pixelClock) if (clkStb) begin
 		if (dx == 0) begin // if moving to right 
 			if ((ball_x_pos + BALL_HALF_SIZE == LEFT_RAKET_POSITION) &&   // if ball meet whis raket
-				(V_BALL_Y_POS - BALL_HALF_SIZE > raket_y_var_pos) && 
-				(V_BALL_Y_POS + BALL_HALF_SIZE < raket_y_var_pos + V_SIZE_RAKET))
+				(ball_y_pos - BALL_HALF_SIZE > raket_y_var_pos) && 
+				(ball_y_pos + BALL_HALF_SIZE < raket_y_var_pos + V_SIZE_RAKET))
 			dx = 1;	
 			else if (ball_x_pos + BALL_HALF_SIZE < H_MAX_POSITION) ball_x_pos <= ball_x_pos + 1;
 			else dx = 1;     // if moving to left 
@@ -187,19 +187,34 @@ module VGAGenerator
 		end
 	end
 
+
+// ball moving by Y
+	reg dy; // if (dy==0)  => y <= y + 1; // if (dy==1) => y <= y -1;
+	always @(posedge pixelClock) if (clkStb) begin
+		if (dy == 0) begin // if moving to right 
+			if (ball_y_pos + BALL_HALF_SIZE < V_MAX_POSITION) ball_y_pos <= ball_y_pos + 1;
+			else dy = 1;     // if moving to left 
+		end
+		else begin  // if (dx == 1)
+			if (ball_y_pos + BALL_HALF_SIZE > V_MIN_POSITION ) ball_y_pos <= ball_y_pos - 1;
+			else dy = 0;	
+		end
+	end
+
+
 	reg ball;
 
 localparam BALL_HALF_SIZE = 8;
 localparam BALL_SIZE = BALL_HALF_SIZE + BALL_HALF_SIZE;
 
-// Ball paint
+// Ball paint // 16x16 square 
 	always @(posedge pixelClock or posedge reset)
 	begin
 		//ball <= (xActivePixel == ball_x_pos) & (yActivePixel == V_BALL_Y_POS);
 		ball <= (xActivePixel > ball_x_pos - BALL_HALF_SIZE ) &
 				(xActivePixel < ball_x_pos + BALL_HALF_SIZE ) &
-				(yActivePixel > V_BALL_Y_POS - BALL_HALF_SIZE ) &
-				(yActivePixel < V_BALL_Y_POS + BALL_HALF_SIZE );
+				(yActivePixel > ball_y_pos - BALL_HALF_SIZE ) &
+				(yActivePixel < ball_y_pos + BALL_HALF_SIZE );
 	end
 
 endmodule
