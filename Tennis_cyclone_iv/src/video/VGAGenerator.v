@@ -32,14 +32,9 @@ module VGAGenerator
 	output blankN,
 	output syncN,
 	input [2:0] bgColor,
-	input vramWriteClock,
-	input signed [9:0] vramWriteAddr,
-	input signed [9:0] vramInData,
 	input raket_up,
 	input raket_down
 );
-
-	localparam Y_OFFSET = 768;
 
 	localparam H_VISIBLE_AREA = 1024;
 	localparam V_VISIBLE_AREA = 768;
@@ -54,19 +49,16 @@ module VGAGenerator
 	localparam V_SIZE_RAKET = 96; 
 	localparam H_SIZE_RAKET = 16; 
 	localparam H_RIGHT_RAKET_OFFSET = 16;
-	localparam LEFT_RAKET_POSITION = H_MAX_POSITION - H_RIGHT_RAKET_OFFSET - H_SIZE_RAKET;
+	localparam LEFT_RAKET_POSITION  = H_MAX_POSITION - H_RIGHT_RAKET_OFFSET - H_SIZE_RAKET;
 	localparam RIGHT_RAKET_POSITION = H_MAX_POSITION - H_RIGHT_RAKET_OFFSET;
 
 	localparam V_RAKET_MIN_POS = V_MIN_POSITION;
 	localparam V_RAKET_MAX_POS = V_MAX_POSITION - V_SIZE_RAKET;
 
-	//localparam V_BALL_Y_POS = H_MIN_POSITION + 50; // temp
-
 	wire vgaClock, blank;
 	wire [23:0] bgFullColor;
-	reg [23:0] fullColor;
+	reg  [23:0] fullColor;
 	wire [9:0] xActivePixel, yActivePixel;
-	wire signed [9:0] yActivePixelPos, vramOutData;
 
 	assign bgFullColor = {{8{bgColor[0]}}, {8{bgColor[1]}}, {8{bgColor[2]}}};
 	assign {rColor, gColor, bColor} = fullColor;
@@ -88,25 +80,11 @@ module VGAGenerator
 	(
 		.areset(reset),
 		.inclk0(inClock),
-		.c0(pixelClock)
+		.c0(pixelClock)  // (50/2) * 3 = 75 MHz
 	);
 	
-	VideoRAM vram0
-	(
-		.data(vramInData),
-		.rdaddress(xActivePixel),
-		.rdclock(pixelClock),
-		.wraddress(vramWriteAddr),
-		.wrclock(vramWriteClock),
-		.wren(1'b1),
-		.q(yActivePixelPos)
-	);
-	
-	reg border;
-	reg raket;
-
-
  	// Border paint
+	reg border; 	
 	always @(posedge pixelClock or posedge reset)
 	begin
 		border <= (xActivePixel < H_BORDER_SIZE) | 
@@ -114,10 +92,12 @@ module VGAGenerator
 				  (yActivePixel < V_BORDER_SIZE) | 
 				  (yActivePixel > (V_VISIBLE_AREA-V_BORDER_SIZE));
 	end
+	//---------------------------
 
 	//Raket paint
 	reg raket_x;
 	reg raket_y;
+	reg raket;
 	always @(posedge pixelClock or posedge reset)
 	begin
 			raket_x <= (xActivePixel >= LEFT_RAKET_POSITION) & 
@@ -128,19 +108,14 @@ module VGAGenerator
 	end
 	//---------------------------	
 
-	always @* //(posedge pixelClock or posedge reset)
-	begin
-		if (raket) fullColor <= 24'hffffff; //24'b1111_1111_1111_1111; //{16{1'b1}};
-		if (border) fullColor <= 24'h00ffff; //16'b1111_1111_1111_1111; //  {22{1'b1}};
-		if (ball) fullColor <= 24'hf0f0f0;
-		if ((!raket) && (!border) && (!ball)) fullColor <= 24'h000000;  //{24{1'b0}};
-
-			
-		//fullColor <= {22{ raket | border}};
-	
-	end
+    always @* 
+    begin
+        if (raket)  fullColor <= {24{1'b1}};                            // 24'hffffff
+        if (border) fullColor <= {16{1'b1}};                            // 24'h00ffff; 
+        if (ball)   fullColor <= {{8{8'hf0}}, {8{8'hf0}}, {8{8'hff}}};      // 24'hf0f0f0;
+        if ((!raket) && (!border) && (!ball)) fullColor <= bgFullColor; // {24{1'b0}} // 24'h000000; 
+    end
 	//---------------------------	
-
 
 	// Raket movement
 	reg [0:16]counter;        // for clk div
@@ -148,10 +123,6 @@ module VGAGenerator
 
 	reg [9:0]raket_y_var_pos;   // [0 - (V_RAKET_MAX_POS - V_RAKET_MIN_POS)]
 	wire clkStb; assign clkStb = &counter; // all in hi level 
-	/*	always @(posedge pixelClock) if (clkStb) begin
-		if (raket_y_var_pos < (V_RAKET_MAX_POS - V_RAKET_MIN_POS)) 	raket_y_var_pos <= raket_y_var_pos + 1;
-		else raket_y_var_pos <= 0;
-	end*/
 
 	always @(posedge pixelClock) if (clkStb) begin
 		if ((raket_up) && (raket_y_var_pos > 0))  
@@ -161,71 +132,48 @@ module VGAGenerator
 	end
 
 	//---------------------------
-
-
 	// ball
+	//---------------------------
+
+
+    // ball moving by X
+	reg dx; // if (dx==0)  => x <= x + 1; // if (dx==1) => x <= x -1;    
 	reg [9:0]ball_x_pos;
-	reg [9:0]ball_y_pos;
-	reg dx; // if (dx==0)  => x <= x + 1; // if (dx==1) => x <= x -1;
-
-
-
-
-// ball moving by X
 	always @(posedge pixelClock) if (clkStb) begin
 		if (dx == 0) begin // if moving to right 
-			if ((ball_x_pos + BALL_HALF_SIZE == LEFT_RAKET_POSITION) &&   // if ball meet whis raket
-				(ball_y_pos - BALL_HALF_SIZE > raket_y_var_pos) && 
-				(ball_y_pos + BALL_HALF_SIZE < raket_y_var_pos + V_SIZE_RAKET))
+			if ((ball_x_pos + BALL_RADIUS == LEFT_RAKET_POSITION) &&   // if ball meet whis raket
+				(ball_y_pos - BALL_RADIUS > raket_y_var_pos) && 
+				(ball_y_pos + BALL_RADIUS < raket_y_var_pos + V_SIZE_RAKET))
 			dx = 1;	
-			else if (ball_x_pos + BALL_HALF_SIZE < H_MAX_POSITION) ball_x_pos <= ball_x_pos + 1;
+			else if (ball_x_pos + BALL_RADIUS < H_MAX_POSITION) ball_x_pos <= ball_x_pos + 1;
 			else dx = 1;     // if moving to left 
 		end
 		else begin  // if (dx == 1)
-			if (ball_x_pos + BALL_HALF_SIZE > H_MIN_POSITION ) ball_x_pos <= ball_x_pos - 1;
+			if (ball_x_pos - BALL_RADIUS > H_MIN_POSITION ) ball_x_pos <= ball_x_pos - 1;
 			else dx = 0;	
 		end
 	end
 
-
-// ball moving by Y
+    // ball moving by Y
 	reg dy; // if (dy==0)  => y <= y + 1; // if (dy==1) => y <= y -1;
+	reg [9:0]ball_y_pos;
 	always @(posedge pixelClock) if (clkStb) begin
 		if (dy == 0) begin // if moving to right 
-			if (ball_y_pos + BALL_HALF_SIZE < V_MAX_POSITION) ball_y_pos <= ball_y_pos + 1;
+			if (ball_y_pos + BALL_RADIUS < V_MAX_POSITION) ball_y_pos <= ball_y_pos + 1;
 			else dy = 1;     // if moving to left 
 		end
 		else begin  // if (dx == 1)
-			if (ball_y_pos + BALL_HALF_SIZE > V_MIN_POSITION ) ball_y_pos <= ball_y_pos - 1;
+			if (ball_y_pos - BALL_RADIUS > V_MIN_POSITION ) ball_y_pos <= ball_y_pos - 1;
 			else dy = 0;	
 		end
 	end
 
-
-	reg ball;
-
-localparam BALL_HALF_SIZE = 8;
-localparam BALL_SIZE = BALL_HALF_SIZE + BALL_HALF_SIZE;
-
-/*// Ball paint // 16x16 square 
+    // Ball paint cirle
+    reg ball;
+    localparam BALL_RADIUS = 12;
 	always @(posedge pixelClock or posedge reset)
 	begin
-		//ball <= (xActivePixel == ball_x_pos) & (yActivePixel == V_BALL_Y_POS);
-		ball <= (xActivePixel > ball_x_pos - BALL_HALF_SIZE ) &
-				(xActivePixel < ball_x_pos + BALL_HALF_SIZE ) &
-				(yActivePixel > ball_y_pos - BALL_HALF_SIZE ) &
-				(yActivePixel < ball_y_pos + BALL_HALF_SIZE );
-	end*/
-
-
-// Ball paint  // 25x25 cirle
-localparam BALL_RADIUS = 12;
-localparam BALL_RADIUS_SQR = 144;
-
-	always @(posedge pixelClock or posedge reset)
-	begin
-		ball <= (xActivePixel - ball_x_pos) * (xActivePixel - ball_x_pos)  +
-				(yActivePixel - ball_y_pos) * (yActivePixel - ball_y_pos)  < BALL_RADIUS_SQR;
+		ball <= (xActivePixel - ball_x_pos) ** 2  + (yActivePixel - ball_y_pos) ** 2 < BALL_RADIUS ** 2;				
 	end
 
 endmodule
