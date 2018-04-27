@@ -8,7 +8,8 @@ module main(
  ,input PS2_CLK
  ,input PS2_DAT
 
- ,output [8:0] LEDG
+ ,output [7:0] LEDG
+ ,output [7:0] LEDR
 
  ,output VGA_VS     
  ,output VGA_HS     
@@ -23,11 +24,13 @@ module main(
 
 wire up_dir, down_dir; 
 
+
 ps2 ps2_inst(
      .PS2_DAT_in (PS2_DAT)
     ,.PS2_CLK_in (PS2_CLK)
     ,.clock      (CLOCK_50)
-    ,.led_out    (LEDG[7:0])
+    ,.led_out_g  (LEDG[7:0])
+    ,.led_out_r  (LEDR[7:0])
     ,.down       (down_dir)
     ,.up         (up_dir)
     );

@@ -62,7 +62,17 @@ set_location_assignment PIN_H21 -to LEDG[4]
 set_location_assignment PIN_G20 -to LEDG[5]
 set_location_assignment PIN_G22 -to LEDG[6]
 set_location_assignment PIN_G21 -to LEDG[7]
-set_location_assignment PIN_F17 -to LEDG[8]
+
+set_location_assignment PIN_G19 -to LEDR[0]
+set_location_assignment PIN_F19 -to LEDR[1]
+set_location_assignment PIN_E19 -to LEDR[2]
+set_location_assignment PIN_F21 -to LEDR[3]
+set_location_assignment PIN_F18 -to LEDR[4]
+set_location_assignment PIN_E18 -to LEDR[5]
+set_location_assignment PIN_J19 -to LEDR[6]
+set_location_assignment PIN_H19 -to LEDR[7]
+
+
 set_location_assignment PIN_M23 -to KEY[0]
 set_location_assignment PIN_M21 -to KEY[1]
 set_location_assignment PIN_N21 -to KEY[2]

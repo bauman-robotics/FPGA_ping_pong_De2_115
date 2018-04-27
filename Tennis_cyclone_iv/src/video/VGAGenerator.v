@@ -142,8 +142,10 @@ module VGAGenerator
 	always @(posedge pixelClock) if (clkStb) begin
 		if (dx == 0) begin // if moving to right 
 			if ((ball_x_pos + BALL_RADIUS == LEFT_RAKET_POSITION) &&   // if ball meet whis raket
-				(ball_y_pos - BALL_RADIUS > raket_y_var_pos) && 
-				(ball_y_pos + BALL_RADIUS < raket_y_var_pos + V_SIZE_RAKET))
+				(ball_y_pos + BALL_RADIUS > raket_y_var_pos) && 
+				(ball_y_pos - BALL_RADIUS < raket_y_var_pos + V_SIZE_RAKET))
+				//(ball_y_pos - BALL_RADIUS > raket_y_var_pos) && 
+				//(ball_y_pos + BALL_RADIUS < raket_y_var_pos + V_SIZE_RAKET))
 			dx = 1;	
 			else if (ball_x_pos + BALL_RADIUS < H_MAX_POSITION) ball_x_pos <= ball_x_pos + 1;
 			else dx = 1;     // if moving to left 
