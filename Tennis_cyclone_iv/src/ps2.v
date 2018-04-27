@@ -2,47 +2,54 @@ module ps2(input PS2_DAT_in,
            input PS2_CLK_in,
            input clock,
            output reg [7:0] led_out_g,
-           output reg [7:0] led_out_r,          			  
+           output [7:0] led_out_r,              
            output reg down,
            output reg up);
 
-// 8'hE0 - код отпускания клавиши
-reg keyready;
-reg [2:0]kr;
+reg 		keyready;
+reg [2:0]	kr;
 reg [7:0]	keycode_o;
-reg [7:0]	keycode_old;
+reg  	    key_release;
+
+reg up_press;
+reg down_press;
+reg left_press;
+reg right_press;
+reg space_press;
+
+assign led_out_r[0] = up_press;
+assign led_out_r[1] = down_press;
+assign led_out_r[2] = left_press;
+assign led_out_r[3] = right_press;
+assign led_out_r[4] = space_press;
+
+always @(posedge clock) begin
+		if      ((up_press)   && (~down_press)) begin up <= 1; down <= 0; end
+		else if ((down_press) && (~up_press))   begin up <= 0; down <= 1; end
+		else 									begin up <= 0; down <= 0; end 
+end
 
 always @(negedge PS2_CLK_in) keyready <= (revcnt[3:0]==10); // получили 10 бит из 11 битного пакета
 // когда мы получим 11 бит пакета, keyready будет равен 0.
 always @(posedge clock) begin
-			 kr <= {kr,keyready};
-			 if (kr[1]&&~kr[2]) begin  // небыло данных, потом получили 10 бит, затем пришло что-то ещё (11 бит),
-                                       // важно, что в старшем разряде - 0, а в следующем - 1 
+	kr <= {kr,keyready};
+	if (kr[1]&&~kr[2]) begin  // небыло данных, потом получили 10 бит, затем пришло что-то ещё (11 бит),
+	                          // важно, что в старшем разряде - 0, а в следующем - 1 
+		led_out_g   <= keycode_o;			  
+		key_release <= keycode_o == 8'hF0;
 
-			  led_out_g   <= keycode_o;			  
-			  led_out_r   <= keycode_old;			  
-
-			  keycode_old <= keycode_o;
-
-			  if ((keycode_o != keycode_old) && (keycode_old == 8'hF0)) begin				  	
-			  	up <= 0; 
-			  	down <= 0;
-			  end
-			  else begin 
-				  if (keycode_o ==8'h72) begin  // down				  	
-				   up   <= 0;
-				   down <= 1;
-				  end 
-				  else if (keycode_o == 8'h75) begin  // up				  
-				   up   <= 1;
-				   down <= 0;
-				  end
-			  end  
-			 end
-end 
-
-reg       ps2_clk_in, ps2_clk_syn1, ps2_dat_in, ps2_dat_syn1;
-wire      clk;
+		case (keycode_o)
+			8'h75: up_press    <= ~key_release;
+			8'h72: down_press  <= ~key_release;
+			8'h6B: left_press  <= ~key_release;
+			8'h74: right_press <= ~key_release;
+			8'h29: space_press <= ~key_release;
+		endcase
+	end  
+end
+	
+reg   ps2_clk_in, ps2_clk_syn1, ps2_dat_in, ps2_dat_syn1;
+wire  clk;
 
 //clk division, derive a 97.65625KHz clock from the 50MHz source;
 reg [8:0] clk_div;
